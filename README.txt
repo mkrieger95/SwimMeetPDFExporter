@@ -10,6 +10,8 @@ In short, this project is aiming to read meet result exports (primarily from Hy-
 
 The hope is to have a consistent export of these results to where this can be utilized by sites like SwimCloud, to archive these meets that only have a .PDF file available.
 
+The initial thought is to tackle this using Python, Pandas, PDFPlumber, and RE. I THINK this would be the minimal needed to read the PDF, process it, export it to a standardized .CSV
+
 ########################################################################
 
 The end goal here is to be able to take these old .PDFs which may be the only remaining record of meet results for various meets, and throw them into a site/system which can continue to preserve these times in a more user-friendly method. There have been a few meets that I personally have wanted to "restore" from a .PDF so I can have it properly archived for years to come.
