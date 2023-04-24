@@ -17,75 +17,27 @@ The initial thought is to tackle this using Python, Pandas, PDFPlumber, and RE. 
 The end goal here is to be able to take these old .PDFs which may be the only remaining record of meet results for various meets, and throw them into a site/system which can continue to preserve these times in a more user-friendly method. There have been a few meets that I personally have wanted to "restore" from a .PDF so I can have it properly archived for years to come.
 
  
-import PyPDF2
+import tabula
+import pandas as pd
 import tkinter as tk
 from tkinter import filedialog
-import csv
-import openpyxl
 
-# create a Tkinter root window
+# Allow user to select the PDF file
 root = tk.Tk()
 root.withdraw()
+file_path = filedialog.askopenfilename(title="Select PDF file", filetypes=[("PDF files", "*.pdf")])
 
-# open a file dialog to select the PDF file to parse
-pdf_path = filedialog.askopenfilename(title="Select PDF", filetypes=[("PDF Files", "*.pdf")])
+# Read the PDF file and extract the table
+df = tabula.read_pdf(file_path, pages="all", lattice=True)[0]
 
-# open the PDF file in binary mode
-with open(pdf_path, 'rb') as pdf_file:
-    # create a PDF reader object
-    pdf_reader = PyPDF2.PdfFileReader(pdf_file)
+# Clean up the data
+df = df.dropna(how="all")
+df = df[df["Event"] != "Event"]
+df.columns = ["Event", "P/F", "Name", "Team", "Seed Time", "Finals Time", "Points"]
 
-    # get the first page of the PDF
-    first_page = pdf_reader.getPage(0)
+# Convert the Seed Time and Finals Time columns to datetime format
+df["Seed Time"] = pd.to_datetime(df["Seed Time"], format="%M:%S.%f").dt.time
+df["Finals Time"] = pd.to_datetime(df["Finals Time"], format="%M:%S.%f").dt.time
 
-    # extract the text from the page
-    page_text = first_page.extractText()
-
-    # split the text into rows
-    rows = page_text.split('\n')
-
-    # specify the starting row index
-    start_row = 5
-
-    # create a list to store the data
-    data = []
-
-    # loop over the rows and process the data
-    for i in range(start_row, len(rows)):
-        # get the current row
-        row = rows[i]
-
-        # split the row into columns
-        columns = row.split()
-
-        # get the first and last name of the swimmer
-        first_name = columns[1]
-        last_name = columns[0]
-
-        # get the age of the swimmer
-        age = columns[2]
-
-        # get the event, heat, lane, and time
-        event = columns[3]
-        heat = columns[4]
-        lane = columns[5]
-        time = columns[6]
-
-        # add the data to the list
-        data.append([first_name, last_name, age, event, heat, lane, time])
-
-# create a file dialog to select the output file
-out_path = filedialog.asksaveasfilename(title="Save CSV", filetypes=[("Excel Files", "*.xlsx")])
-
-# create an Excel workbook object
-workbook = openpyxl.Workbook()
-
-# select the active worksheet
-worksheet = workbook.active
-
-# write the data to the worksheet
-for row in data:
-    worksheet.append(row)
-
-# save the workbook to the output file
-workbook.save(out_path)
+# Save the data to an XLSX file
+df.to_excel("results.xlsx", index=False)
